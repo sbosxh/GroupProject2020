@@ -1,5 +1,3 @@
-
-
 '*************** Group Details ******************
 
 '1. M Malim 
@@ -16,133 +14,171 @@
 Option Strict On
 Option Explicit On
 Option Infer Off
-Public Class Organization
-    Implements IDonate
 
-    '********************* Attributes **************************
-    Private Shared _NextClient As Integer
-    Private _OrgName As String
-    Private _Level As Integer
-    Private _NameofClient As String
-    Private _Amount() As Double
-    Private _TotalAmount As Double
-    Protected _FinancialGoal As Double
-    Private _Population As Integer
-    Private _Country As String
+Imports System.IO
+Imports System.Runtime.Serialization.Formatters.Binary
 
-    '************************** Constructor ********************
-    Public Sub New(_NameofClient As String, numClients As Integer)
-        Me._NameofClient = _NameofClient
-        ReDim _Amount(numClients)
+Public Class FrmOrganizations
+    Private Organizations1() As Hunger
+    Private Organizations2() As Poverty
+    Private nIndividual As Integer
+    Private Type1 As Integer
+    Private nDays As Integer
+    Private Type2 As Integer
+    Private count1 As Integer = 2
+    Private count2 As Integer = 2
+
+    'File information
+    Private FS As FileStream
+    Private ReadOnly Filename As String = "GroupProject2020.txt"
+    Private BF As BinaryFormatter
+
+
+    Private Sub BtnCreateFile_Click(sender As Object, e As EventArgs) Handles BtnCreateFile.Click   'creating a filestream here
+        FS = New FileStream(Filename, FileMode.Create, FileAccess.Write)
+        BF = New BinaryFormatter()
+
+        FS.Close()
     End Sub
-    '************************ Methods *************************
-    Private Function NextC() As Integer   'utility method for used for shared
-        _NextClient += 1
-        Return _NextClient
+
+    Private Sub BtnSaveFile_Click(sender As Object, e As EventArgs) Handles BtnSaveFile.Click   'saving to file
+        FS = New FileStream(Filename, FileMode.Open, FileAccess.ReadWrite)
+        BF = New BinaryFormatter()
+
+
+
+        FS.Close()
+    End Sub
+    'Enumeration
+    Enum Organizations
+        Hunger = 1
+        Poverty = 2
+    End Enum
+    Enum Doners
+        Individual = 1
+        Organisation = 2
+    End Enum
+
+
+    Private Sub BtnSetUp_Click(sender As Object, e As EventArgs) Handles BtnSetUp.Click
+        nIndividual += 1     'will go through each client 1 by 1
+
+        ReDim Preserve Organizations1(count1)
+        ReDim Preserve Organizations2(count2)
+
+
+        Type2 = CInt(InputBox("Are you a: " & Environment.NewLine & "1) Individual " & Environment.NewLine & "2) Organization"))
+
+        Select Case Type2     'For whether an organization or individual
+            Case Doners.Individual
+
+                Dim individualname As String
+                individualname = InputBox("What is the name of the individual?")
+
+                Type1 = CInt(InputBox("Which type of Organization are you choosing to donate to?" _
+                                     & Environment.NewLine & "1)Hunger" & Environment.NewLine & "2)Poverty"))
+
+                Select Case Type1     'which type are you donating to
+
+                    Case Organizations.Hunger
+                        Dim choice As Integer
+                        For a As Integer = 1 To count1
+                            Organizations1(a) = New Hunger(individualname, nIndividual)
+                        Next a
+                        Dim which As Integer = CInt(InputBox("Which organisation would you like to donate to?" _
+                                                             + Environment.NewLine + "1) Bread for the world institute" _
+                                                             + Environment.NewLine + "2) The hunger project" + Environment.NewLine + Store1()))
+
+
+                        choice = CInt(InputBox("Would you like to donate: " + Environment.NewLine + "1) Food" + Environment.NewLine + "2) Money"))
+                        If choice = 1 Then
+                            Organizations1(which).Food = InputBox("What is the food you would like to donate?")
+                            Organizations1(which).Calories = CInt(InputBox("How much calory does the product contain?"))
+                            Organizations1(which).Caloriesfromfat = CInt(InputBox("How much calories from fat does the product contain?"))
+                        End If
+                        If choice = 2 Then
+                            Organizations1(which).Amount(nIndividual) = CDbl(InputBox("How much money would you like to donate to the organisation?"))
+                        End If
+                        TxtDisplay.Text &= Organizations1(which).Display2() + Environment.NewLine
+                       ' TxtDisplay.Text &= "Amount of fat in the product is " & Format(hungerr.CalcFat(), "0.00") & " units"
+                    Case Organizations.Poverty
+                        For x As Integer = 1 To count2
+                            Organizations2(x) = New Poverty(individualname, nIndividual)
+                        Next x
+                        Dim which As Integer = CInt(InputBox("Which organisation would you like to donate to?" + Environment.NewLine + "1) Oxfam International" _
+                                                             + Environment.NewLine + "2) Concern Worldwide" + Environment.NewLine + Store2()))
+                        Organizations2(which).Amount(nIndividual) = CDbl(InputBox("How much would you like to donate towards fighting poverty?"))          'i realized that the maxamount() function won't work as the values will be mixed up unless we use a 2D array somehow
+                        TxtDisplay.Text &= Organizations2(which).Display2() + Environment.NewLine
+                End Select
+
+            Case Doners.Organisation   'if they choose option 2,, organization
+                Dim Organizationname As String = InputBox("What is the name of the Organisation?")
+                Type1 = CInt(InputBox("Which type of Organization are you trying to create?" _
+                                     & Environment.NewLine & "1)Hunger" & Environment.NewLine & "2)Poverty"))
+
+
+                If Type1 = 1 Then
+                    count1 += 1
+                    ReDim Preserve Organizations1(count1)
+                    Organizations1(count1) = New Hunger(Organizationname)  'i thought the numclients should be set to zero as it is not a client
+                    Organizations1(count1).OrgName = Organizationname
+                    Organizations1(count1).Country = InputBox("Which country would you like to help?")
+                    Organizations1(count1).Population = CInt(InputBox("What is the population of the country you are trying to help?"))
+                    Organizations1(count1).Deaths = CInt(InputBox("How many people on average are dying from hunger in " + Organizations1(count1).Country + "?"))
+                    Dim acceptance As Integer = CInt(InputBox(Organizations1(count1).OrganisationAcceptance() _
+                                                              + Environment.NewLine + "Have you been accepted?" _
+                                                              + Environment.NewLine + "1) Yes" + Environment.NewLine + "2) No"))
+
+                    If acceptance = 1 Then
+                        Organizations1(count1).FinancialGoal = CDbl(InputBox("How much do you aim to raise towards fighting hunger in " + Organizations1(count1).Country + "?"))
+                        TxtDisplay.Text &= Organizations1(count1).Display() + Environment.NewLine
+                    Else
+                        count1 -= 1
+                        ReDim Preserve Organizations1(count1)
+                    End If
+                End If
+                If Type1 = 2 Then
+                    count2 += 1
+                    ReDim Preserve Organizations2(count2)
+                    Organizations2(count2) = New Poverty(Organizationname)
+                    Organizations2(count2).OrgName = Organizationname
+                    Organizations2(count2).Country = InputBox("Which country would you like to help?")
+                    Organizations2(count2).Population = CInt(InputBox("What is the population of the country you are trying to help?"))
+                    Organizations2(count2).Unemployed = CInt(InputBox("How many people on average are unemployed in " + Organizations2(count2).Country + "?"))
+                    Dim acceptance As Integer = CInt(InputBox(Organizations2(count2).OrganisationAcceptance() _
+                                                              + Environment.NewLine + "Have you been accepted?" _
+                                                              + Environment.NewLine + "1) Yes" + Environment.NewLine + "2) No"))
+                    If acceptance = 1 Then
+                        Organizations2(count2).FinancialGoal = CDbl(InputBox("How much do you aim to raise towards fighting poverty in " + Organizations2(count2).Country + "?"))
+                        TxtDisplay.Text &= Organizations2(count2).Display() + Environment.NewLine
+                    Else
+                        count2 -= 1
+                        ReDim Preserve Organizations2(count2)
+                    End If
+                End If
+
+        End Select
+
+
+    End Sub
+
+
+    Private Function Store1() As String    'for hunger
+        Dim display As String = ""
+        Dim count As Integer = 3
+        While count <= Organizations2.Length - 1
+            display &= CStr(count) + ") " + Organizations2(count).OrgName + Environment.NewLine
+            count += 1
+        End While
+        Return display
     End Function
-    Public Property Level As Integer
-        Get
-            Return _Level
-        End Get
-        Set(value As Integer)
-            If value < 0 Then
-                _Level = 0
-            Else
-                _Level = value
-            End If
-        End Set
-    End Property
 
-    Public Property Population() As Integer
-        Set(value As Integer)
-            _Population = value
-        End Set
-        Get
-            Return _Population
-        End Get
-    End Property
-    Public Property OrgName() As String
-        Set(value As String)
-            _OrgName = value
-        End Set
-        Get
-            Return _OrgName
-        End Get
-    End Property
-    Public Property Country() As String
-        Set(value As String)
-            _Country = value
-        End Set
-        Get
-            Return _Country
-        End Get
-    End Property
-    Public Property Amount(index As Integer) As Double
-        Get
-            Return _Amount(index)
-        End Get
-        Set(value As Double)
-            _Amount(index) = value
-        End Set
-    End Property
-
-    Public Overridable Function CalcTotAve() As Double   'finding the tot & average
-        _TotalAmount = 0
-        For a As Integer = 1 To _Amount.Length - 1
-            _TotalAmount += _Amount(a)
-        Next a
-        Return _TotalAmount / (_Amount.Length - 1)
-    End Function
-
-
-    Public Function MaxAmount() As Double  'finding the maximum amount
-        Dim Max As Double
-        Max = _Amount(1)
-
-        For x As Integer = 2 To _Amount.Length - 1
-            If Max < _Amount(x) Then
-                Max = _Amount(x)
-            End If
-        Next x
-        Return Max
-    End Function
-
-    Public Overridable Function Display() As String  'For organization
-        Return "Organization name: " & _OrgName & Environment.NewLine & "Country Name: " _
-            & _Country & Environment.NewLine _
-            & "Population " _
-            & _Population & Environment.NewLine & "Total amount: " & _TotalAmount & Environment.NewLine & "/Financial goal: " & _FinancialGoal
-    End Function
-
-    Public Overridable Function Display2() As String  ''For Client
-        For t As Integer = 1 To _Amount.Length - 1
-            Return "Client: " & NextC() _
-                & Environment.NewLine & "Client name: " _
-                & _NameofClient & Environment.NewLine _
-                & "Country Name: " & _Country & Environment.NewLine & "Amount donated: " & _Amount(t) & Environment.NewLine
-        Next t
-    End Function
-
-
-    Public Overridable Function Levels() As Integer
-        '''''''''''''''
-    End Function
-    Public Function OrganisationAcceptance() As String
-        Dim Alert As String
-        If Levels() > 0 Then
-            Alert = "Your application has been accepted"
-        Else
-            Alert = "Your application has been rejected"
-        End If
-        Return Alert
-    End Function
-
-    Public Function GoalReached() As String Implements IDonate.GoalReached   'use of interface
-        Dim Answer As String
-        If _FinancialGoal >= _TotalAmount Then
-            Answer = "Congratulations, the financial goal has been reached."
-        Else
-            Answer = "Sorry, the financial goal was not attained."
-        End If
-        Return Answer
+    Private Function Store2() As String    'for poverty
+        Dim display As String = ""
+        Dim count As Integer = 3
+        While count <= Organizations2.Length - 1
+            display &= CStr(count) + ") " + Organizations2(count).OrgName + Environment.NewLine
+            count += 1
+        End While
+        Return display
     End Function
